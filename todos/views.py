@@ -6,15 +6,20 @@ from rest_framework import status
 
 from .models import Todo
 from .serializers import TodoSerializer
+from .pagination import TodoPagination
 
 
 class TodoListCreateView(APIView):
 
     def get(self, request):
-        todos = Todo.objects.all()
-        serializer = TodoSerializer(todos, many=True)
+        todos = Todo.objects.all().order_by('-created_at', '-id')
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = TodoPagination()
+        paginated_todos = paginator.paginate_queryset(todos, request)
+
+        serializer = TodoSerializer(paginated_todos, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = TodoSerializer(data=request.data)
