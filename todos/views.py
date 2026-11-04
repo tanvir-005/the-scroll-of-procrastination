@@ -12,8 +12,60 @@ from .pagination import TodoPagination
 class TodoListCreateView(APIView):
 
     def get(self, request):
-        todos = Todo.objects.all().order_by('-created_at', '-id')
+        todos = Todo.objects.all()
 
+        # filtering only completed or incompleted todos
+        is_completed = request.query_params.get('is_completed')
+        if is_completed is not None:
+            if is_completed.lower() not in ['true', 'false']:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid query parameter.",
+                        "errors": {
+                            "is_completed": ["Must be either true or false."]
+                        }
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            todos = todos.filter(is_completed=is_completed.lower() == 'true')
+
+        # searching with keywords
+        search_query = request.query_params.get('search')
+        if search_query:
+            todos = todos.filter(title__icontains=search_query)
+
+        # sort the results
+        sort_by = request.query_params.get('sort', '-created_at')
+
+        allowed_sort_fields = [
+            'created_at',
+            '-created_at',
+            'title',
+            '-title',
+            'is_completed',
+            '-is_completed',
+        ]
+
+        # handle sorting
+        if sort_by not in allowed_sort_fields:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Invalid sorting parameter.",
+                    "errors": {
+                        "sort": [
+                            f"Allowed values: {', '.join(allowed_sort_fields)}"
+                        ]
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        todos = todos.order_by(sort_by, '-id')
+
+        # pagination
         paginator = TodoPagination()
         paginated_todos = paginator.paginate_queryset(todos, request)
 
