@@ -1,33 +1,39 @@
 from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from rest_framework import status
 
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is None:
-        return response
+        return Response(
+            {
+                "success": False,
+                "message": "Internal server error.",
+                "errors": None
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     if isinstance(response.data, dict):
         errors = response.data
     else:
         errors = {"detail": response.data}
 
-    message = "Request failed."
-
-    if response.status_code == 400:
-        message = "Validation failed."
-    elif response.status_code == 401:
-        message = "Authentication required."
-    elif response.status_code == 403:
-        message = "Permission denied."
-    elif response.status_code == 404:
-        message = "Resource not found."
-    elif response.status_code >= 500:
-        message = "Internal server error."
+    status_messages = {
+        400: "Validation failed.",
+        401: "Authentication required.",
+        403: "Permission denied.",
+        404: "Resource not found.",
+    }
 
     response.data = {
         "success": False,
-        "message": message,
+        "message": status_messages.get(
+            response.status_code,
+            "Request failed."
+        ),
         "errors": errors
     }
 

@@ -18,17 +18,12 @@ class TodoListCreateView(APIView):
 
     def post(self, request):
         serializer = TodoSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            serializer.data,
+            status=status.HTTP_201_CREATED
         )
 
 
@@ -46,15 +41,10 @@ class TodoDetailView(APIView):
     def put(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(todo, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
         todo = self.get_object(pk)
@@ -63,15 +53,10 @@ class TodoDetailView(APIView):
             data=request.data,
             partial=True
         )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         todo = self.get_object(pk)
