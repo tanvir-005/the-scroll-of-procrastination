@@ -3,14 +3,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Todo
 from .serializers import TodoSerializer
 from .pagination import TodoPagination
-
+from .auth_serializers import RegisterSerializer
 
 class TodoListCreateView(APIView):
-
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         todos = Todo.objects.all()
 
@@ -85,7 +86,7 @@ class TodoListCreateView(APIView):
 
 
 class TodoDetailView(APIView):
-
+    permission_classes = [IsAuthenticated]
     def get_object(self, pk):
         return get_object_or_404(Todo, pk=pk)
 
@@ -120,3 +121,26 @@ class TodoDetailView(APIView):
         todo.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RegisterView(APIView):
+
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response(
+            {
+                "message": "User registered successfully.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
