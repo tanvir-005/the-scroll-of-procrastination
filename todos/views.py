@@ -4,14 +4,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
 
 from .models import Todo
 from .serializers import TodoSerializer
-from .pagination import TodoPagination
+from .pagination import TodoPagination, PaginatedTodoSerializer
 from .auth_serializers import RegisterSerializer
+from .schema_serializers import RegisterResponseSerializer
 
 class TodoListCreateView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(operation_id='todo_list', responses=PaginatedTodoSerializer)
     def get(self, request):
         todos = Todo.objects.filter(user=request.user)
 
@@ -74,6 +78,7 @@ class TodoListCreateView(APIView):
 
         return paginator.get_paginated_response(serializer.data)
 
+    @extend_schema(request=TodoSerializer, responses={201: TodoSerializer})
     def post(self, request):
         serializer = TodoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -87,15 +92,19 @@ class TodoListCreateView(APIView):
 
 class TodoDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = TodoSerializer
+
     def get_object(self, pk):
         return get_object_or_404(Todo, pk=pk, user=self.request.user)
 
+    @extend_schema(operation_id='todo_retrieve', responses=TodoSerializer)
     def get(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(todo)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(operation_id='todo_update', request=TodoSerializer, responses=TodoSerializer)
     def put(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(todo, data=request.data)
@@ -104,6 +113,7 @@ class TodoDetailView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(operation_id='todo_partial_update', request=TodoSerializer, responses=TodoSerializer)
     def patch(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(
@@ -116,6 +126,7 @@ class TodoDetailView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(operation_id='todo_delete', responses={204: None})
     def delete(self, request, pk):
         todo = self.get_object(pk)
         todo.delete()
@@ -124,10 +135,10 @@ class TodoDetailView(APIView):
 
 
 class RegisterView(APIView):
-
     permission_classes = []
     authentication_classes = []
 
+    @extend_schema(operation_id='register_user', request=RegisterSerializer, responses={201: RegisterSerializer})
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

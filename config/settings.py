@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # Third-party applications
     'rest_framework',
+    'drf_spectacular',
 
     # Local applications
     'todos',
@@ -135,6 +136,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'The Scroll of Procrastination API',
+    'DESCRIPTION': 'A TODO management REST API with JWT authentication.',
+    'VERSION': '1.0.0',
 }
 
 LOGGING = {
