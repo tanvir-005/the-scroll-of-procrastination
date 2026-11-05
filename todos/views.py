@@ -13,7 +13,7 @@ from .auth_serializers import RegisterSerializer
 class TodoListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        todos = Todo.objects.all()
+        todos = Todo.objects.filter(user=request.user)
 
         # filtering only completed or incompleted todos
         is_completed = request.query_params.get('is_completed')
@@ -77,7 +77,7 @@ class TodoListCreateView(APIView):
     def post(self, request):
         serializer = TodoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(user=request.user)
 
         return Response(
             serializer.data,
@@ -88,7 +88,7 @@ class TodoListCreateView(APIView):
 class TodoDetailView(APIView):
     permission_classes = [IsAuthenticated]
     def get_object(self, pk):
-        return get_object_or_404(Todo, pk=pk)
+        return get_object_or_404(Todo, pk=pk, user=self.request.user)
 
     def get(self, request, pk):
         todo = self.get_object(pk)
