@@ -9,32 +9,27 @@ def custom_exception_handler(exc, context):
     if response is None:
         return Response(
             {
-                "success": False,
-                "message": "Internal server error.",
-                "errors": None
+                "error": "Internal server error.",
+                "code": status.HTTP_500_INTERNAL_SERVER_ERROR
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-    if isinstance(response.data, dict):
-        errors = response.data
-    else:
-        errors = {"detail": response.data}
 
     status_messages = {
         400: "Validation failed.",
         401: "Authentication required.",
         403: "Permission denied.",
         404: "Resource not found.",
+        405: "Method not allowed.",
+        429: "Too many requests.",
     }
 
     response.data = {
-        "success": False,
-        "message": status_messages.get(
+        "error": status_messages.get(
             response.status_code,
             "Request failed."
         ),
-        "errors": errors
+        "code": response.status_code
     }
 
     return response

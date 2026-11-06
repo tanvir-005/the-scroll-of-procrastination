@@ -1,7 +1,9 @@
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
+from rest_framework import status
 
+from django.urls import reverse
 from todos.models import Todo
 
 
@@ -127,3 +129,119 @@ def test_user_can_retrieve_own_todo(client, user_a, todo):
 
     assert response.status_code == 200
     assert response.data["title"] == "Test TODO"
+
+
+class TodoQueryTests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='queryuser',
+            password='StrongPassword123!'
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        Todo.objects.create(
+            user=self.user,
+            title='Django tutorial',
+            is_completed=False
+        )
+
+        Todo.objects.create(
+            user=self.user,
+            title='Python programming',
+            is_completed=True
+        )
+
+        Todo.objects.create(
+            user=self.user,
+            title='Django REST framework',
+            is_completed=True
+        )
+
+        self.url = '/api/todos/'
+
+    def test_search_by_title(self):
+        response = self.client.get(
+            self.url,
+            {'search': 'django'}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_filter_completed(self):
+        response = self.client.get(
+            self.url,
+            {'status': 'completed'}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+
+    def test_filter_pending(self):
+        response = self.client.get(
+            self.url,
+            {'status': 'pending'}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+
+    def test_sort_by_title_ascending(self):
+        response = self.client.get(
+            self.url,
+            {'sort_by': 'title', 'order': 'asc'}
+        )
+
+        titles = [
+            todo['title']
+            for todo in response.data['results']
+        ]
+
+        self.assertEqual(
+            titles,
+            ['Django REST framework', 'Django tutorial', 'Python programming']
+        )
+
+    def test_sort_by_title_descending(self):
+        response = self.client.get(
+            self.url,
+            {'sort_by': 'title', 'order': 'desc'}
+        )
+
+        titles = [
+            todo['title']
+            for todo in response.data['results']
+        ]
+
+        self.assertEqual(
+            titles,
+            [
+                'Python programming',
+                'Django tutorial',
+                'Django REST framework'
+            ]
+        )
+
+    def test_invalid_sort_field(self):
+        response = self.client.get(
+            self.url,
+            {'sort_by': 'invalid'}
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_invalid_sort_order(self):
+        response = self.client.get(
+            self.url,
+            {'order': 'random'}
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )

@@ -15,7 +15,10 @@ from .schema_serializers import RegisterResponseSerializer
 class TodoListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(operation_id='todo_list', responses=PaginatedTodoSerializer)
+    @extend_schema(
+        operation_id='todo_list',
+        responses=PaginatedTodoSerializer
+    )
     def get(self, request):
         todos = Todo.objects.filter(user=request.user)
 
@@ -26,13 +29,11 @@ class TodoListCreateView(APIView):
             if todo_status not in ['completed', 'pending']:
                 return Response(
                     {
-                        "success": False,
-                        "message": "Invalid status parameter.",
-                        "errors": {
-                            "status": [
-                                "Must be either 'completed' or 'pending'."
-                            ]
-                        }
+                        "error": (
+                            "Invalid status parameter. "
+                            "Must be either 'completed' or 'pending'."
+                        ),
+                        "code": status.HTTP_400_BAD_REQUEST
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -41,44 +42,66 @@ class TodoListCreateView(APIView):
                 is_completed=(todo_status == 'completed')
             )
 
-        # sort the results
-        sort_by = request.query_params.get('sort', '-created_at')
+        # Search TODOs by title
+        search_query = request.query_params.get('search')
 
-        allowed_sort_fields = [
-            'created_at',
-            '-created_at',
-            'title',
-            '-title',
-            'is_completed',
-            '-is_completed',
-        ]
+        if search_query:
+            todos = todos.filter(
+                title__icontains=search_query.strip()
+            )
 
-        # handle sorting
+        # Sorting
+        sort_by = request.query_params.get('sort_by', 'created_at')
+        order = request.query_params.get('order', 'desc')
+
+        allowed_sort_fields = ['created_at', 'title']
+        allowed_orders = ['asc', 'desc']
+
         if sort_by not in allowed_sort_fields:
             return Response(
                 {
-                    "success": False,
-                    "message": "Invalid sorting parameter.",
-                    "errors": {
-                        "sort": [
-                            f"Allowed values: {', '.join(allowed_sort_fields)}"
-                        ]
-                    }
+                    "error": (
+                        "Invalid sorting field. "
+                        "Allowed values: created_at, title."
+                    ),
+                    "code": status.HTTP_400_BAD_REQUEST
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        todos = todos.order_by(sort_by, '-id')
+        if order not in allowed_orders:
+            return Response(
+                {
+                    "error": (
+                        "Invalid sorting order. "
+                        "Allowed values: asc, desc."
+                    ),
+                    "code": status.HTTP_400_BAD_REQUEST
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # pagination
+        ordering = sort_by if order == 'asc' else f'-{sort_by}'
+        todos = todos.order_by(ordering, '-id')
+
+        # Pagination
         paginator = TodoPagination()
-        paginated_todos = paginator.paginate_queryset(todos, request)
+        paginated_todos = paginator.paginate_queryset(
+            todos,
+            request
+        )
 
-        serializer = TodoSerializer(paginated_todos, many=True)
+        serializer = TodoSerializer(
+            paginated_todos,
+            many=True
+        )
 
         return paginator.get_paginated_response(serializer.data)
 
-    @extend_schema(request=TodoSerializer, responses={201: TodoSerializer})
+    @extend_schema(
+        request=TodoSerializer,
+        responses={201: TodoSerializer}
+    )
     def post(self, request):
         serializer = TodoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -95,25 +118,49 @@ class TodoDetailView(APIView):
     serializer_class = TodoSerializer
 
     def get_object(self, pk):
-        return get_object_or_404(Todo, pk=pk, user=self.request.user)
+        return get_object_or_404(
+            Todo,
+            pk=pk,
+            user=self.request.user
+        )
 
-    @extend_schema(operation_id='todo_retrieve', responses=TodoSerializer)
+    @extend_schema(
+        operation_id='todo_retrieve',
+        responses=TodoSerializer
+    )
     def get(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(todo)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
-    @extend_schema(operation_id='todo_update', request=TodoSerializer, responses=TodoSerializer)
+    @extend_schema(
+        operation_id='todo_update',
+        request=TodoSerializer,
+        responses=TodoSerializer
+    )
     def put(self, request, pk):
         todo = self.get_object(pk)
-        serializer = TodoSerializer(todo, data=request.data)
+        serializer = TodoSerializer(
+            todo,
+            data=request.data
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
-    @extend_schema(operation_id='todo_partial_update', request=TodoSerializer, responses=TodoSerializer)
+    @extend_schema(
+        operation_id='todo_partial_update',
+        request=TodoSerializer,
+        responses=TodoSerializer
+    )
     def patch(self, request, pk):
         todo = self.get_object(pk)
         serializer = TodoSerializer(
@@ -124,21 +171,33 @@ class TodoDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
-    @extend_schema(operation_id='todo_delete', responses={204: None})
+    @extend_schema(
+        operation_id='todo_delete',
+        responses={204: None}
+    )
     def delete(self, request, pk):
         todo = self.get_object(pk)
         todo.delete()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class RegisterView(APIView):
     permission_classes = []
     authentication_classes = []
 
-    @extend_schema(operation_id='register_user', request=RegisterSerializer, responses={201: RegisterSerializer})
+    @extend_schema(
+        operation_id='register_user',
+        request=RegisterSerializer,
+        responses={201: RegisterSerializer}
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
