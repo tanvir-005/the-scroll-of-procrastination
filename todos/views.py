@@ -196,7 +196,7 @@ class RegisterView(APIView):
     @extend_schema(
         operation_id='register_user',
         request=RegisterSerializer,
-        responses={201: RegisterSerializer}
+        responses={201: RegisterResponseSerializer}
     )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)

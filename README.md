@@ -74,8 +74,8 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API will be available at:
-`http://127.0.0.1:8000/`
+The API base URL is:
+`http://127.0.0.1:8000/api/`
 
 ## API Endpoints
 
@@ -83,9 +83,9 @@ The API will be available at:
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/register/` | Register a new user |
-| POST | `/api/token/` | Obtain JWT access and refresh tokens |
-| POST | `/api/token/refresh/` | Refresh an access token |
+| POST | `/api/auth/register/` | Register with `username`, `email`, and `password` |
+| POST | `/api/auth/login/` | Obtain JWT access and refresh tokens |
+| POST | `/api/auth/refresh/` | Refresh an access token |
 
 ### TODO Management
 
@@ -106,6 +106,18 @@ Include your access token in the request header:
 
 ```http
 Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+Log in with JSON credentials, then use the returned `access` token for TODO requests:
+
+```json
+{"username":"your-username","password":"your-password"}
+```
+
+When the access token expires, send the `refresh` token to `/api/auth/refresh/`:
+
+```json
+{"refresh":"YOUR_REFRESH_TOKEN"}
 ```
 
 ### TODO Query Parameters
