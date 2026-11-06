@@ -19,27 +19,27 @@ class TodoListCreateView(APIView):
     def get(self, request):
         todos = Todo.objects.filter(user=request.user)
 
-        # filtering only completed or incompleted todos
-        is_completed = request.query_params.get('is_completed')
-        if is_completed is not None:
-            if is_completed.lower() not in ['true', 'false']:
+        # Filter by status
+        todo_status = request.query_params.get('status')
+
+        if todo_status is not None:
+            if todo_status not in ['completed', 'pending']:
                 return Response(
                     {
                         "success": False,
-                        "message": "Invalid query parameter.",
+                        "message": "Invalid status parameter.",
                         "errors": {
-                            "is_completed": ["Must be either true or false."]
+                            "status": [
+                                "Must be either 'completed' or 'pending'."
+                            ]
                         }
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            todos = todos.filter(is_completed=is_completed.lower() == 'true')
-
-        # searching with keywords
-        search_query = request.query_params.get('search')
-        if search_query:
-            todos = todos.filter(title__icontains=search_query)
+            todos = todos.filter(
+                is_completed=(todo_status == 'completed')
+            )
 
         # sort the results
         sort_by = request.query_params.get('sort', '-created_at')

@@ -4,9 +4,9 @@ from .serializers import TodoSerializer
 
 
 class TodoPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 10
     page_query_param = 'page'
-    page_size_query_param = 'page_size'
+    page_size_query_param = 'limit'
     max_page_size = 50
 
 class PaginatedTodoSerializer(serializers.Serializer):
