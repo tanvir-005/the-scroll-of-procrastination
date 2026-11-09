@@ -62,6 +62,7 @@ Then update your `.env` file:
 SECRET_KEY=your-django-secret-key
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
+MAX_REQUESTS=30
 ```
 
 Generate a Django secret key using:
@@ -169,6 +170,19 @@ The response returns a fresh access token:
 }
 ```
 
+## Rate Limiting
+
+Requests to `/api/` are limited by client IP over a rolling 60-second window. Set `MAX_REQUESTS` in `.env` to change the number of requests allowed per IP; the example configuration allows 30. Requests above the limit return `429 Too Many Requests` with the standard error shape:
+
+```json
+{
+  "error": "Too many requests.",
+  "code": 429
+}
+```
+
+The limit is loaded when the server starts, so restart the server after changing `MAX_REQUESTS`. Request counts are held in process memory, reset on restart, and are not shared across multiple server processes; this implementation is intended for local or single-process use, not production-scale rate limiting.
+
 ### TODO Query Parameters
 
 The TODO listing endpoint supports:
@@ -253,4 +267,7 @@ the-scroll-of-procrastination/
 
 - Each authenticated user can access and manage only their own TODOs.
 - The SQLite database is created locally through Django migrations.
+- TODO lists return 10 items per page by default; `limit` can be set up to 50.
+- After changing a model, create and apply migrations with `python manage.py makemigrations` and `python manage.py migrate`.
+- Request logs are written to `logs/django.log` and include the method, path, status, duration, and username when available.
 - Keep `.env` and other secret files out of version control.
