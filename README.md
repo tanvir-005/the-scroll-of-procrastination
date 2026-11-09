@@ -50,7 +50,13 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure environment variables
-Create a `.env` file in the project root:
+Copy the example environment file and update it for your local setup:
+
+```bash
+cp .env.example .env
+```
+
+Then update your `.env` file:
 
 ```env
 SECRET_KEY=your-django-secret-key
@@ -72,6 +78,11 @@ python manage.py migrate
 ### 6. Start the development server
 ```bash
 python manage.py runserver
+```
+
+### 7. Or run with Docker Compose
+```bash
+docker compose up --build
 ```
 
 The API base URL is:
