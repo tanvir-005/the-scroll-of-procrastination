@@ -76,6 +76,8 @@ python manage.py migrate
 ```
 
 ### 6. Start the development server
+Make sure your `.env` file exists and contains the required values, then run:
+
 ```bash
 python manage.py runserver
 ```
@@ -159,6 +161,14 @@ When the access token expires, send the `refresh` token to `/api/auth/refresh/`:
 {"refresh":"YOUR_REFRESH_TOKEN"}
 ```
 
+The response returns a fresh access token:
+
+```json
+{
+  "access": "NEW_ACCESS_TOKEN"
+}
+```
+
 ### TODO Query Parameters
 
 The TODO listing endpoint supports:
@@ -208,10 +218,12 @@ API errors follow a consistent structure:
 
 ```json
 {
-    "error": "Validation failed.",
-    "code": 400
+  "error": "Validation failed.",
+  "code": 400
 }
 ```
+
+This is the same shape returned by validation failures and invalid query parameters.
 
 ## Project Structure
 

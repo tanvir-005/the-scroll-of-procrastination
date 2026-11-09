@@ -55,6 +55,23 @@ def test_unauthenticated_user_cannot_list_todos(client):
 
     assert response.status_code == 401
 
+
+@pytest.mark.django_db
+def test_user_can_login_with_valid_credentials(client, user_a):
+    response = client.post(
+        "/api/auth/login/",
+        {
+            "username": user_a.username,
+            "password": "StrongPassword123!"
+        },
+        format="json"
+    )
+
+    assert response.status_code == 200
+    assert "access" in response.data
+    assert "refresh" in response.data
+
+
 @pytest.mark.django_db
 def test_authenticated_user_can_create_todo(client, user_a):
     client.force_authenticate(user=user_a)
