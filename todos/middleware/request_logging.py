@@ -15,13 +15,15 @@ class RequestLoggingMiddleware:
         response = self.get_response(request)
 
         duration = time.time() - start_time
+        user = getattr(request.user, 'username', 'anonymous')
 
         logger.info(
-            "%s %s %s - %.3fs",
+            "%s %s %s - %.3fs user=%s",
             request.method,
             request.path,
             response.status_code,
-            duration
+            duration,
+            user
         )
 
         return response

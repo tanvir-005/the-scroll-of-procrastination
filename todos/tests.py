@@ -75,6 +75,41 @@ def test_authenticated_user_can_create_todo(client, user_a):
     ).exists()
 
 
+@pytest.mark.django_db
+def test_cannot_create_todo_with_whitespace_title(client, user_a):
+    client.force_authenticate(user=user_a)
+
+    response = client.post(
+        "/api/todos/",
+        {
+            "title": "   ",
+            "description": "This should fail"
+        },
+        format="json"
+    )
+
+    assert response.status_code == 400
+    assert response.data["code"] == 400
+    assert "error" in response.data
+
+
+@pytest.mark.django_db
+def test_cannot_create_todo_with_title_longer_than_255_chars(client, user_a):
+    client.force_authenticate(user=user_a)
+
+    response = client.post(
+        "/api/todos/",
+        {
+            "title": "a" * 256,
+            "description": "This should fail"
+        },
+        format="json"
+    )
+
+    assert response.status_code == 400
+    assert response.data["code"] == 400
+    assert "error" in response.data
+
 
 @pytest.mark.django_db
 def test_user_can_only_see_own_todos(client, user_a, user_b, todo):
@@ -165,6 +200,21 @@ def test_register_duplicate_email(client, user_a):
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_register_requires_password(client):
+    response = client.post(
+        "/api/auth/register/",
+        {
+            "name": "No Password User",
+            "email": "nopass@example.com",
+        },
+        format="json"
+    )
+
+    assert response.status_code == 400
+    assert response.data["code"] == 400
 
 
 class TodoQueryTests(APITestCase):

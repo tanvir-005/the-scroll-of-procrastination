@@ -83,7 +83,7 @@ The API base URL is:
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register/` | Register with `username`, `email`, and `password` |
+| POST | `/api/auth/register/` | Register with `name`, `email`, and `password` |
 | POST | `/api/auth/login/` | Obtain JWT access and refresh tokens |
 | POST | `/api/auth/refresh/` | Refresh an access token |
 
@@ -108,10 +108,38 @@ Include your access token in the request header:
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
-Log in with JSON credentials, then use the returned `access` token for TODO requests:
+Register a user with:
 
 ```json
-{"username":"your-username","password":"your-password"}
+{"name":"Your Name","email":"you@example.com","password":"StrongPassword123!"}
+```
+
+The API generates a unique username from the email local part (for example, `you` or `you1`). Log in using that generated username and your password:
+
+```json
+{"username":"you","password":"StrongPassword123!"}
+```
+
+Successful registration returns a status message and the created user summary:
+
+```json
+{
+  "message": "User registered successfully.",
+  "user": {
+    "id": 1,
+    "username": "you",
+    "email": "you@example.com"
+  }
+}
+```
+
+Successful login returns JWT tokens:
+
+```json
+{
+  "refresh": "YOUR_REFRESH_TOKEN",
+  "access": "YOUR_ACCESS_TOKEN"
+}
 ```
 
 When the access token expires, send the `refresh` token to `/api/auth/refresh/`:
